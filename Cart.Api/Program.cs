@@ -1,41 +1,53 @@
+using Cart.Application.Abstractions.Persistence;
+using Cart.Application.Abstractions.Products;
+using Cart.Infrastructure.Persistence;
+using Cart.Infrastructure.Persistence.Repositories;
+using Cart.Infrastructure.Products;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+// ---------- SQL Server ----------
+builder.Services.AddDbContext<CartDbContext>(opt =>
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("CartDb")));
+
+// ---------- Repositories ----------
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// ---------- ProductService ----------
+builder.Services.Configure<ProductServiceOptions>(
+    builder.Configuration.GetSection("ProductService"));
+
+builder.Services.AddHttpClient<IProductClient, ProductClient>((sp, http) =>
+{
+    var opt = sp.GetRequiredService<
+        Microsoft.Extensions.Options.IOptions<ProductServiceOptions>>().Value;
+
+    http.BaseAddress = new Uri(opt.BaseUrl);
+});
+
+// ---------- MediatR ----------
+builder.Services.AddMediatR(typeof(Cart.Application.Carts.Commands.CreateCart.CreateCartCommand).Assembly);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
