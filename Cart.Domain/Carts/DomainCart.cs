@@ -29,7 +29,9 @@
             var existing = _items.SingleOrDefault(x => x.ProductId == productId);
             if (existing is null)
             {
-                _items.Add(new CartItem(productId, quantity));
+                var item = new CartItem(productId, quantity);
+                item.AttachToCart(Id);
+                _items.Add(item);
             }
             else
             {

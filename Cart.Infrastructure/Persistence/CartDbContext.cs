@@ -22,6 +22,9 @@ public sealed class CartDbContext : DbContext
             b.ToTable("Carts");
             b.HasKey(x => x.Id);
 
+            // niech EF nie próbuje generować Id po stronie DB
+            b.Property(x => x.Id).ValueGeneratedNever();
+
             b.Property(x => x.UserId)
                 .IsRequired()
                 .HasMaxLength(200);
@@ -31,6 +34,10 @@ public sealed class CartDbContext : DbContext
 
             b.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
+
+            // !!! najważniejsze: backing field dla read-only kolekcji !!!
+            b.Metadata.FindNavigation(nameof(DomainCart.Items))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
 
             b.HasMany(x => x.Items)
                 .WithOne()
@@ -43,6 +50,10 @@ public sealed class CartDbContext : DbContext
         {
             b.ToTable("CartItems");
             b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id).ValueGeneratedNever();
+
+            b.Property(x => x.CartId).IsRequired();
 
             b.Property(x => x.ProductId)
                 .IsRequired();

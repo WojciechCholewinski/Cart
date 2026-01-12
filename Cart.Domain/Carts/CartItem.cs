@@ -3,7 +3,7 @@
     public sealed class CartItem
     {
         public Guid Id { get; private set; } = Guid.NewGuid();
-        public Guid CartId { get; private set; } // Dla EF Core
+        public Guid CartId { get; private set; } // FK dla EF Core
         public Guid ProductId { get; private set; }
         public int Quantity { get; private set; }
 
@@ -14,6 +14,13 @@
 
             ProductId = productId;
             Quantity = quantity;
+        }
+
+        // DomainCart ustawi to przy dodaniu
+        internal void AttachToCart(Guid cartId)
+        {
+            if (cartId == Guid.Empty) throw new ArgumentException("CartId is required.", nameof(cartId));
+            CartId = cartId;
         }
 
         public void Increase(int quantity)

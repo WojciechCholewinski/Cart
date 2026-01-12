@@ -4,9 +4,9 @@ using MediatR;
 namespace Cart.Application.Carts.Commands.RemoveProductFromCart;
 
 public sealed class RemoveProductFromCartCommandHandler(ICartRepository carts)
-    : IRequestHandler<RemoveProductFromCartCommand>
+    : IRequestHandler<RemoveProductFromCartCommand, Unit>
 {
-    public async Task Handle(RemoveProductFromCartCommand request, CancellationToken ct)
+    public async Task<Unit> Handle(RemoveProductFromCartCommand request, CancellationToken ct)
     {
         if (request.Quantity <= 0)
             throw new ArgumentOutOfRangeException(nameof(request.Quantity), "Quantity must be > 0.");
@@ -18,10 +18,7 @@ public sealed class RemoveProductFromCartCommandHandler(ICartRepository carts)
         cart.RemoveItem(request.ProductId, request.Quantity);
 
         await carts.SaveChangesAsync(ct);
-    }
 
-    Task<Unit> IRequestHandler<RemoveProductFromCartCommand, Unit>.Handle(RemoveProductFromCartCommand request, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
+        return Unit.Value;
     }
 }
